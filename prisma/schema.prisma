@@ -1,0 +1,302 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password         String
+  role             Role              @default(PENDING)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  approved         Boolean           @default(false)
+  sessionVersion   Int               @default(1)  // رقم نسخة الجلسة للتحقق من صلاحية التوكن
+  invoices         Invoice[]
+  patients         Patient[]
+  purchaseInvoices PurchaseInvoice[]
+  radiationResults RadiationResult[]
+  reports          Report[]
+  samples          Sample[]
+  testAssignments  TestAssignment[]
+  materialTransactions MaterialTransaction[]
+  labMaterials     LabMaterial[]   // المواد المخبرية التي أنشأها المستخدم
+}
+
+model Patient {
+  id               String            @id @default(uuid())
+  fileNumber       String            @unique
+  name             String
+  phone            String?
+  address          String?
+  dateOfBirth      DateTime?
+  gender           Gender
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  createdById      String
+  invoices         Invoice[]
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  queueNumbers     QueueNumber[]
+  radiationResults RadiationResult[]
+  testAssignments  TestAssignment[]
+
+  @@index([createdById], map: "Patient_createdById_fkey")
+}
+
+model Test {
+  id              String           @id @default(uuid())
+  name            String
+  category        String
+  price           Float
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  testAssignments TestAssignment[]
+}
+
+model TestAssignment {
+  id               String            @id @default(uuid())
+  patientId        String
+  testId           String
+  status           TestStatus        @default(PENDING)
+  assignedById     String
+  assignedAt       DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  invoiceItems     InvoiceItem[]
+  radiationResults RadiationResult[]
+  samples          Sample[]
+  assignedBy       User              @relation(fields: [assignedById], references: [id])
+  patient          Patient           @relation(fields: [patientId], references: [id])
+  test             Test              @relation(fields: [testId], references: [id])
+
+  @@unique([patientId, testId])
+  @@index([assignedById], map: "TestAssignment_assignedById_fkey")
+  @@index([testId], map: "TestAssignment_testId_fkey")
+}
+
+model Sample {
+  id               String         @id @default(uuid())
+  testAssignmentId String
+  sampleCode       String         @unique
+  collectedAt      DateTime       @default(now())
+  collectedById    String
+  notes            String?
+  results          String?
+  reportPdfUrl     String?
+  collectedBy      User           @relation(fields: [collectedById], references: [id])
+  testAssignment   TestAssignment @relation(fields: [testAssignmentId], references: [id])
+
+  @@index([collectedById], map: "Sample_collectedById_fkey")
+  @@index([testAssignmentId], map: "Sample_testAssignmentId_fkey")
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  patientId   String
+  totalAmount Float
+  paidAmount  Float         @default(0)
+  isPaid      Boolean       @default(false)
+  invoiceDate DateTime      @default(now())
+  dueDate     DateTime?
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  patient     Patient       @relation(fields: [patientId], references: [id])
+  items       InvoiceItem[]
+
+  @@index([createdById], map: "Invoice_createdById_fkey")
+  @@index([patientId], map: "Invoice_patientId_fkey")
+}
+
+model InvoiceItem {
+  id               String         @id @default(uuid())
+  invoiceId        String
+  testAssignmentId String
+  price            Float
+  quantity         Int            @default(1)
+  subtotal         Float
+  invoice          Invoice        @relation(fields: [invoiceId], references: [id])
+  testAssignment   TestAssignment @relation(fields: [testAssignmentId], references: [id])
+
+  @@index([invoiceId], map: "InvoiceItem_invoiceId_fkey")
+  @@index([testAssignmentId], map: "InvoiceItem_testAssignmentId_fkey")
+}
+
+model QueueNumber {
+  id        String      @id @default(uuid())
+  number    Int
+  patientId String
+  date      DateTime    @default(now())
+  status    QueueStatus @default(WAITING)
+  patient   Patient     @relation(fields: [patientId], references: [id])
+
+  @@unique([date, number])
+  @@index([patientId], map: "QueueNumber_patientId_fkey")
+}
+
+model Report {
+  id          String     @id @default(uuid())
+  title       String
+  type        ReportType
+  description String?
+  createdAt   DateTime   @default(now())
+  startDate   DateTime
+  endDate     DateTime
+  pdfUrl      String?
+  createdById String
+  createdBy   User       @relation(fields: [createdById], references: [id])
+
+  @@index([createdById], map: "Report_createdById_fkey")
+}
+
+model PurchaseInvoice {
+  id            String                @id @default(uuid())
+  supplierName  String
+  invoiceNumber String?
+  totalAmount   Float
+  paidAmount    Float                 @default(0)
+  isPaid        Boolean               @default(false)
+  invoiceDate   DateTime              @default(now())
+  dueDate       DateTime?
+  notes         String?
+  createdById   String
+  createdBy     User                  @relation(fields: [createdById], references: [id])
+  items         PurchaseInvoiceItem[]
+
+  @@index([createdById], map: "PurchaseInvoice_createdById_fkey")
+}
+
+model PurchaseInvoiceItem {
+  id          String          @id @default(uuid())
+  invoiceId   String
+  itemName    String
+  description String?
+  quantity    Int
+  unitPrice   Float
+  subtotal    Float
+  invoice     PurchaseInvoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId], map: "PurchaseInvoiceItem_invoiceId_fkey")
+}
+
+model RadiationResult {
+  id               String         @id @default(uuid())
+  title            String
+  description      String?
+  resultDetails    String
+  reportText       String?
+  imageUrl         String?
+  pdfUrl           String?
+  patientId        String
+  testAssignmentId String
+  createdById      String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  createdBy        User           @relation(fields: [createdById], references: [id])
+  patient          Patient        @relation(fields: [patientId], references: [id])
+  testAssignment   TestAssignment @relation(fields: [testAssignmentId], references: [id])
+
+  @@index([createdById], map: "RadiationResult_createdById_fkey")
+  @@index([patientId], map: "RadiationResult_patientId_fkey")
+  @@index([testAssignmentId], map: "RadiationResult_testAssignmentId_fkey")
+}
+
+model LabMaterial {
+  id                String    @id @default(uuid())
+  name              String    // اسم المادة
+  code              String?   // رمز المادة (اختياري)
+  category          MaterialCategory // تصنيف المادة
+  description       String?   // وصف المادة
+  unit              String    // وحدة القياس (مل، قطعة، علبة، إلخ)
+  currentQuantity   Float     // الكمية الحالية
+  minimumQuantity   Float     // الحد الأدنى للكمية (للتنبيه)
+  price             Float?    // سعر الوحدة (اختياري)
+  supplier          String?   // المورد (اختياري)
+  expiryDate        DateTime? // تاريخ انتهاء الصلاحية (اختياري)
+  location          String?   // موقع التخزين (اختياري)
+  notes             String?   // ملاحظات إضافية
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdById       String?   // معرف المستخدم المنشئ (اختياري للمواد القديمة)
+  createdBy         User?     @relation(fields: [createdById], references: [id])
+  transactions      MaterialTransaction[] // العمليات المرتبطة بالمادة
+
+  @@index([createdById], map: "LabMaterial_createdById_fkey")
+}
+
+model MaterialTransaction {
+  id              String    @id @default(uuid())
+  material        LabMaterial @relation(fields: [materialId], references: [id])
+  materialId      String
+  type            TransactionType // نوع الحركة
+  quantity        Float     // الكمية
+  previousQuantity Float    // الكمية قبل العملية
+  newQuantity     Float     // الكمية بعد العملية
+  reason          String?   // سبب العملية
+  batchNumber     String?   // رقم الدفعة (للإضافات)
+  invoiceNumber   String?   // رقم الفاتورة (للإضافات)
+  createdAt       DateTime  @default(now())
+  createdBy       User      @relation(fields: [createdById], references: [id])
+  createdById     String
+
+  @@index([materialId], map: "MaterialTransaction_materialId_fkey")
+  @@index([createdById], map: "MaterialTransaction_createdById_fkey")
+}
+
+enum Role {
+  ADMIN
+  RECEPTIONIST
+  LAB_TECHNICIAN
+  ACCOUNTANT
+  PENDING
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum TestStatus {
+  PENDING
+  SAMPLE_COLLECTED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum QueueStatus {
+  WAITING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum ReportType {
+  PATIENT
+  TEST
+  FINANCIAL
+  SAMPLE
+  SUMMARY
+}
+
+enum TransactionType {
+  ADD       // إضافة
+  REDUCE    // تخفيض/استهلاك
+  ADJUST    // تعديل/جرد
+  EXPIRED   // منتهي الصلاحية
+  DAMAGED   // تالف
+}
+
+enum MaterialCategory {
+  REAGENT       // كاشف
+  CONSUMABLE    // مستهلكات
+  EQUIPMENT     // معدات/أدوات
+  GLASSWARE     // زجاجيات
+  CHEMICAL      // مواد كيميائية
+  OTHER         // أخرى
+}

@@ -1,0 +1,1173 @@
+{
+  "info": {
+    "_postman_id": "medlab-collection",
+    "name": "MedLab API",
+    "description": "API Endpoints Collection for MedLab System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Set current date in YYYY-MM-DD format",
+          "var today = new Date();",
+          "var year = today.getFullYear();",
+          "var month = (today.getMonth() + 1).toString().padStart(2, '0');",
+          "var day = today.getDate().toString().padStart(2, '0');",
+          "var formattedDate = `${year}-${month}-${day}`;",
+          "pm.environment.set(\"today\", formattedDate);",
+          "console.log(\"Current date set: \" + formattedDate);",
+          "// Check API link availability",
+          "console.log(\"API URL used: \" + pm.environment.get(\"base_url\"));",
+          "",
+          "// Set auth-token cookie from token variable",
+          "var token = pm.environment.get(\"token\");",
+          "if (token) {",
+          "    pm.cookies.set(\"auth-token\", token, { domain: pm.environment.get(\"base_url\") });",
+          "    console.log(\"Auth token cookie set from token variable\");",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "المصادقة",
+      "item": [
+        {
+          "name": "تسجيل الدخول",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Used to log into the system and obtain a JWT authentication token."
+          }
+        },
+        {
+          "name": "إنشاء حساب",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"User Name Example\",\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Create a new user account in the system. Available roles: ADMIN, RECEPTIONIST, LAB_TECHNICIAN, ACCOUNTANT"
+          }
+        },
+        {
+          "name": "الحصول على بيانات المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current user data using the authentication token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "إدارة المرضى",
+      "item": [
+        {
+          "name": "الحصول على قائمة المرضى",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/patients?search=&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Retrieve a list of patients with search and pagination capabilities."
+          }
+        },
+        {
+          "name": "إضافة مريض جديد",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check for successful response",
+                  "pm.test(\"Patient added successfully\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "// Extract and save patient ID for subsequent requests",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.id) {",
+                  "    pm.environment.set(\"patient_id\", jsonData.id);",
+                  "    console.log(\"Patient ID set: \" + jsonData.id);",
+                  "}",
+                  "// Save patient file number as well",
+                  "if (jsonData && jsonData.fileNumber) {",
+                  "    pm.environment.set(\"saved_file_number\", jsonData.fileNumber);",
+                  "    console.log(\"Patient file number set: \" + jsonData.fileNumber);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"{{AddPatientName}}\",\n    \"phone\": \"0512345678\",\n    \"dateOfBirth\": \"1990-01-01\",\n    \"gender\": \"MALE\",\n    \"address\": \"Patient Address Example\",\n    \"fileNumber\": \"PT-{{AddFileNumber}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients"]
+            }
+          }
+        },
+        {
+          "name": "الحصول على بيانات مريض",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/patients/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{patient_id}}",
+                  "description": "Patient ID"
+                }
+              ]
+            },
+            "description": "Get all data for a specific patient using their ID."
+          }
+        },
+        {
+          "name": "الحصول على فحوصات مريض",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/patients/:id/tests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ":id", "tests"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{patient_id}}",
+                  "description": "Patient ID"
+                }
+              ]
+            },
+            "description": "Get the list of tests associated with a specific patient."
+          }
+        },
+        {
+          "name": "تعديل بيانات مريض",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"{{EditPatientName}}\",\n    \"phone\": \"0512345678\",\n    \"dateOfBirth\": \"1990-01-01\",\n    \"gender\": \"MALE\",\n    \"address\": \"Updated Address\",\n  \"fileNumber\": \"PT-{{EditFileNumber}}\" \n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{patient_id}}",
+                  "description": "Patient ID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "حذف مريض",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/patients/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{patient_id}}",
+                  "description": "Patient ID"
+                }
+              ]
+            },
+            "description": "Delete a patient from the system (Admin access only)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "إدارة الفحوصات",
+      "item": [
+        {
+          "name": "الحصول على قائمة الفحوصات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tests?search=&category=&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tests"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "category",
+                  "value": ""
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Retrieve the list of available tests in the laboratory."
+          }
+        },
+        {
+          "name": "الحصول على المرضى الذين لديهم فحوصات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tests/assignments?withoutSamples=false&notInvoiced=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tests", "assignments"],
+              "query": [
+                {
+                  "key": "withoutSamples",
+                  "value": "false",
+                  "description": "فقط الفحوصات التي ليس لها عينات"
+                },
+                {
+                  "key": "notInvoiced",
+                  "value": "false",
+                  "description": "فقط الفحوصات التي لم يتم إصدار فواتير لها"
+                }
+              ]
+            },
+            "description": "الحصول على قائمة المرضى الذين تم تعيين فحوصات لهم مع تفاصيل الفحوصات"
+          }
+        },
+        {
+          "name": "إضافة فحص جديد",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check for successful response",
+                  "pm.test(\"Test added successfully\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "// Extract and save test ID for subsequent requests",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.id) {",
+                  "    pm.environment.set(\"test_id\", jsonData.id); // General test_id, can be used for test_id_1",
+                  "    pm.environment.set(\"test_id_1\", jsonData.id); ",
+                  "    console.log(\"Test ID set (test_id & test_id_1): \" + jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"{{AddTestName}}\",\n    \"category\": \"{{AddTestType}}\",\n    \"price\": 100,\n    \"description\": \"Test Description Example\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tests"]
+            },
+            "description": "Add a new test to the list of available tests. Its ID will be saved to 'test_id' and 'test_id_1'."
+          }
+        },
+        {
+          "name": "إضافة فحص لمريض",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check for successful response",
+                  "pm.test(\"Test assigned to patient successfully\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "// Extract and save test assignment ID for subsequent requests",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.assignment && jsonData.assignment.id) {",
+                  "    pm.environment.set(\"test_assignment_id\", jsonData.assignment.id);",
+                  "    console.log(\"Test assignment ID set: \" + jsonData.assignment.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"patientId\": \"{{patient_id}}\",\n    \"testId\": \"{{test_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tests/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tests", "assign"]
+            },
+            "description": "Assign a single test to a patient. Requires patient ID and test ID. The assigned test ID will be saved to test_assignment_id for use in other requests like adding samples."
+          }
+        },
+        {
+          "name": "تعيين فحوصات متعددة لمريض",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check for successful response",
+                  "pm.test(\"Multiple tests assigned to patient successfully\", function() {",
+                  "    pm.response.to.have.status(201); // Or 200 OK depending on API design",
+                  "});",
+                  "// Extract and save test assignment ID(s) or batch ID",
+                  "var jsonData = pm.response.json();",
+                  "// The structure of jsonData depends on your API's response for this operation.",
+                  "// If it returns a single ID for the batch operation:",
+                  "if (jsonData && jsonData.assignmentBatchId) {",
+                  "    pm.environment.set(\"test_assignment_id\", jsonData.assignmentBatchId);",
+                  "    console.log(\"Test assignment batch ID set: \" + jsonData.assignmentBatchId);",
+                  "} else if (jsonData && jsonData.id) { // Or a generic id for the operation",
+                  "    pm.environment.set(\"test_assignment_id\", jsonData.id);",
+                  "    console.log(\"Test assignment operation ID set: \" + jsonData.id);",
+                  "} else if (jsonData && jsonData.assignments && jsonData.assignments.length > 0) {",
+                  "    // If API returns assignments array in response object",
+                  "    pm.environment.set(\"test_assignment_id\", jsonData.assignments[0].id);",
+                  "    console.log(\"First test assignment ID set: \" + jsonData.assignments[0].id);",
+                  "} else if (jsonData && Array.isArray(jsonData) && jsonData.length > 0) {",
+                  "    // If API returns array of assignments directly",
+                  "    pm.environment.set(\"test_assignment_id\", jsonData[0].id);",
+                  "    console.log(\"First test assignment ID set: \" + jsonData[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Clean up test ID variables to prevent sending invalid values",
+                  "function cleanupTestId(varName) {",
+                  "    var value = pm.variables.get(varName);",
+                  "    var defaultValues = [",
+                  "        undefined, null, '', 'test_uuid_example_1', 'test_uuid_example_2', ",
+                  "        'test_uuid_example_3', 'test_uuid_example_4', 'default_single_test_id'",
+                  "    ];",
+                  "    ",
+                  "    // If it's a default/empty value, set it to empty string",
+                  "    if (defaultValues.includes(value)) {",
+                  "        pm.variables.set(varName, '');",
+                  "        return true; // Was cleaned",
+                  "    }",
+                  "    return false; // Was already valid",
+                  "}",
+                  "",
+                  "// Clean up all test ID variables",
+                  "cleanupTestId('test_id_1');",
+                  "cleanupTestId('test_id_2');",
+                  "cleanupTestId('test_id_3');",
+                  "cleanupTestId('test_id_4');",
+                  "",
+                  "// Collect valid test IDs",
+                  "var validTestIds = [];",
+                  "if (pm.variables.get('test_id_1')) validTestIds.push(pm.variables.get('test_id_1'));",
+                  "if (pm.variables.get('test_id_2')) validTestIds.push(pm.variables.get('test_id_2'));",
+                  "if (pm.variables.get('test_id_3')) validTestIds.push(pm.variables.get('test_id_3'));",
+                  "if (pm.variables.get('test_id_4')) validTestIds.push(pm.variables.get('test_id_4'));",
+                  "",
+                  "console.log('Valid test IDs that will be sent:', validTestIds);",
+                  "",
+                  "// If no valid test IDs found, try to use the main test_id",
+                  "if (validTestIds.length === 0) {",
+                  "    var mainTestId = pm.variables.get('test_id');",
+                  "    if (mainTestId && mainTestId !== 'default_single_test_id') {",
+                  "        validTestIds.push(mainTestId);",
+                  "        console.log('No valid test IDs found, using main test_id instead:', mainTestId);",
+                  "    } else {",
+                  "        console.warn('WARNING: No valid test IDs available for assignment!');",
+                  "    }",
+                  "}",
+                  "",
+                  "// Store the valid test IDs array as a JSON string for use in the request body",
+                  "pm.environment.set('valid_test_ids_array', JSON.stringify(validTestIds));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"patientId\": \"{{patient_id}}\",\n    \"testIds\": [\n        \"{{test_id_1}}\",\n        \"{{test_id_2}}\"\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tests/assign-multiple",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tests", "assign-multiple"]
+            },
+            "description": "Assign multiple tests to a patient. The request body includes four test ID slots (test_id_1 through test_id_4). To use this request:\n\n1. First run 'Add New Test' request multiple times to create tests and save their IDs\n2. Each time you add a test, its ID will be saved to test_id_1, test_id, etc.\n3. You can manually set the test IDs in the environment variables\n4. Empty or default values will be automatically cleaned up before sending\n\nThe pre-request script handles validation and will warn you if no valid test IDs are found."
+          }
+        }
+      ]
+    },
+    {
+      "name": "إدارة العينات",
+      "item": [
+        {
+          "name": "إضافة عينة جديدة",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check for successful response",
+                  "pm.test(\"Sample added successfully\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "// Extract and save sample code for subsequent requests",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.sampleCode) {",
+                  "    pm.environment.set(\"sample_code\", jsonData.sampleCode);",
+                  "    console.log(\"Sample code set: \" + jsonData.sampleCode);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"testAssignmentId\": \"{{test_assignment_id}}\",\n    \"notes\": \"Notes about the sample\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/samples",
+              "host": ["{{base_url}}"],
+              "path": ["api", "samples"]
+            },
+            "description": "Add a new sample linked to a test assigned to a patient. Requires 'test_assignment_id' from assigning tests. The patient is identified automatically through the test assignment."
+          }
+        },
+        {
+          "name": "الحصول على بيانات عينة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/samples/:sampleCode",
+              "host": ["{{base_url}}"],
+              "path": ["api", "samples", ":sampleCode"],
+              "variable": [
+                {
+                  "key": "sampleCode",
+                  "value": "{{sample_code}}",
+                  "description": "Sample Code"
+                }
+              ]
+            },
+            "description": "Get sample information using the sample code."
+          }
+        },
+        {
+          "name": "تحديث نتائج العينة",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate results object",
+                  "var sampleResults = {",
+                  "    \"hemoglobin\": \"14.5 g/dL\",",
+                  "    \"whiteBloodCellCount\": \"7.5 × 10^9/L\",",
+                  "    \"plateletCount\": \"350 × 10^9/L\"",
+                  "};",
+                  "// Store results object as JSON string for variable interpolation",
+                  "pm.environment.set(\"stringifiedResults\", JSON.stringify(sampleResults));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"results\": \"{{stringifiedResults}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/samples/:sampleCode/results",
+              "host": ["{{base_url}}"],
+              "path": ["api", "samples", ":sampleCode", "results"],
+              "variable": [
+                {
+                  "key": "sampleCode",
+                  "value": "{{sample_code}}",
+                  "description": "Sample Code"
+                }
+              ]
+            },
+            "description": "Update sample test results. The 'results' field must be a JSON string (not a JSON object). The pre-request script creates a sample results object, converts it to a JSON string, and stores it in the stringifiedResults variable."
+          }
+        },
+        {
+          "name": "الحصول على قائمة العينات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/samples?status=&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "samples"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Sample status: PENDING, PROCESSING, COMPLETED"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Get the list of samples in the system."
+          }
+        }
+      ]
+    },
+    {
+      "name": "إدارة الفواتير",
+      "item": [
+        {
+          "name": "الحصول على قائمة الفواتير",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invoices?search=&status=&startDate=&endDate=&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "invoices"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "PAID, UNPAID, PARTIAL"
+                },
+                {
+                  "key": "startDate",
+                  "value": "",
+                  "description": "YYYY-MM-DD"
+                },
+                {
+                  "key": "endDate",
+                  "value": "",
+                  "description": "YYYY-MM-DD"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Retrieve a list of invoices with search and filtering by status and date."
+          }
+        },
+        {
+          "name": "إضافة فاتورة جديدة",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Check for successful response",
+                  "pm.test(\"Invoice added successfully\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "// Extract and save invoice ID for subsequent requests",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.id) {",
+                  "    pm.environment.set(\"invoice_id\", jsonData.id);",
+                  "    console.log(\"Invoice ID set: \" + jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"patientId\": \"{{patient_id}}\",\n    \"items\": [\n        {\n            \"testAssignmentId\": \"{{test_assignment_id}}\",\n            \"quantity\": 1,\n            \"price\": 100,\n            \"subtotal\": 100\n        }\n    ],\n    \"totalAmount\": 100,\n    \"paidAmount\": 100,\n    \"isPaid\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/invoices",
+              "host": ["{{base_url}}"],
+              "path": ["api", "invoices"]
+            },
+            "description": "Add a new invoice linked to patient tests. A test must first be assigned to a patient."
+          }
+        },
+        {
+          "name": "الحصول على فاتورة محددة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invoices/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "invoices", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{invoice_id}}",
+                  "description": "Invoice ID"
+                }
+              ]
+            },
+            "description": "Get information for a specific invoice."
+          }
+        },
+        {
+          "name": "تحديث حالة الدفع",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"patientId\": \"{{patient_id}}\",\n    \"paidAmount\": 100,\n    \"isPaid\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/invoices/{{invoice_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "invoices", "{{invoice_id}}"],
+              "variable": [
+                {
+                  "key": "invoice_id",
+                  "value": "{{invoice_id}}",
+                  "description": "Invoice ID"
+                }
+              ]
+            },
+            "description": "Update the payment status for a specific invoice. Uses PUT method to /api/invoices/:id endpoint."
+          }
+        }
+      ]
+    },
+    {
+      "name": "نظام الانتظار",
+      "item": [
+        {
+          "name": "الحصول على قائمة الانتظار",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/queue?date={{date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queue"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}",
+                  "description": "Date in YYYY-MM-DD format"
+                }
+              ]
+            },
+            "description": "Get the queue list for a specific day."
+          }
+        },
+        {
+          "name": "إضافة مريض للانتظار",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"patientId\": \"{{patient_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queue"]
+            },
+            "description": "Add a patient to the queue."
+          }
+        },
+        {
+          "name": "تحديث حالة رقم الانتظار",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"COMPLETED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queue/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queue", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Queue entry ID"
+                }
+              ]
+            },
+            "description": "Update the status of a specific queue entry (WAITING, PROCESSING, COMPLETED, CANCELLED)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "التقارير",
+      "item": [
+        {
+          "name": "توليد تقرير جديد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"FINANCIAL\",\n    \"title\": \"Monthly Financial Report\",\n    \"startDate\": \"{{today}}\",\n    \"endDate\": \"{{today}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reports/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "generate"]
+            },
+            "description": "Generate a new report based on the specified type and period. Report types: FINANCIAL, PATIENT, TEST, SAMPLE, SUMMARY."
+          }
+        },
+        {
+          "name": "الحصول على قائمة التقارير",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports?type=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "Report type"
+                }
+              ]
+            },
+            "description": "Get a list of previously generated reports."
+          }
+        },
+        {
+          "name": "الحصول على تقرير محدد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Report ID"
+                }
+              ]
+            },
+            "description": "Get information for a specific report."
+          }
+        }
+      ]
+    },
+    {
+      "name": "لوحة التحكم",
+      "item": [
+        {
+          "name": "الحصول على إحصائيات لوحة التحكم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard"]
+            },
+            "description": "Get general statistics for the dashboard."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT authentication token"
+    },
+    {
+      "key": "date",
+      "value": "{{today}}",
+      "type": "string",
+      "description": "Date for query in YYYY-MM-DD format"
+    },
+    {
+      "key": "today",
+      "value": "",
+      "type": "string",
+      "description": "Current day's date in YYYY-MM-DD format"
+    },
+    {
+      "key": "patient_id",
+      "value": "",
+      "type": "string",
+      "description": "ID of the created patient"
+    },
+    {
+      "key": "saved_file_number",
+      "value": "",
+      "type": "string",
+      "description": "File number of the saved patient"
+    },
+    {
+      "key": "test_id",
+      "value": "",
+      "type": "string",
+      "description": "Test ID (e.g., from 'Add New Test', used as fallback for test_id_1 when assigning tests)"
+    },
+    {
+      "key": "test_id_1",
+      "value": "",
+      "type": "string",
+      "description": "First Test ID for assigning multiple tests (set this to an actual ID)"
+    },
+    {
+      "key": "test_id_2",
+      "value": "",
+      "type": "string",
+      "description": "Second Test ID for assigning multiple tests (set this to an actual ID)"
+    },
+    {
+      "key": "test_assignment_id",
+      "value": "",
+      "type": "string",
+      "description": "ID of the test assignment (or batch assignment ID) to a patient"
+    },
+    {
+      "key": "sample_code",
+      "value": "",
+      "type": "string",
+      "description": "Sample code"
+    },
+    {
+      "key": "invoice_id",
+      "value": "",
+      "type": "string",
+      "description": "Invoice ID"
+    },
+    {
+      "key": "stringifiedResults",
+      "value": "",
+      "type": "string",
+      "description": "JSON string of sample results"
+    },
+    {
+      "key": "AddFileNumber",
+      "value": "",
+      "type": "string",
+      "description": "Example file number for adding a patient"
+    },
+    {
+      "key": "EditFileNumber",
+      "value": "",
+      "type": "string",
+      "description": "Example file number for editing a patient"
+    }
+  ]
+}

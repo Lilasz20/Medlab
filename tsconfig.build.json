@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "incremental": true,
+    "checkJs": false,
+    "isolatedModules": false
+  },
+  "exclude": [
+    "node_modules",
+    "src/generated/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

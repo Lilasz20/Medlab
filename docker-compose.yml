@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: med1
+      MYSQL_USER: medlabuser
+      MYSQL_PASSWORD: medlabpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # خدمة التطبيق
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=mysql://medlabuser:medlabpassword@db:3306/med1
+      - JWT_SECRET=medlab-secret-key-should-be-changed-in-production
+      - NODE_ENV=production
+    volumes:
+      - ./:/app
+      - /app/node_modules
+
+  # اختياري: إضافة خدمة phpmyadmin لإدارة قاعدة البيانات من خلال الويب
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+volumes:
+  mysql-data:

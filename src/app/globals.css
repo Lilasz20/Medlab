@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --input-bg: #f9fafb;
+  --input-border: #d1d5db;
+  --button-primary: #4f46e5;
+  --button-primary-hover: #4338ca;
+  --sidebar-bg: #1e293b;
+  --sidebar-text: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f3f4f6;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --button-primary: #4f46e5;
+  --button-primary-hover: #6366f1;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #f3f4f6;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* لمعالجة مشكلة طبقات المودال */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  max-width: 32rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  border: 1px solid var(--card-border);
+}
+
+.text-2xl-custom {
+  @apply text-2xl font-bold;
+  color: var(--foreground);
+}
+
+/* تنسيقات حقول الإدخال */
+input,
+textarea,
+select {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--foreground) !important;
+}
+
+/* تنسيقات مخصصة لشريط التمرير */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* تحسين تفاعلية السلايد بار */
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(79, 70, 229, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+  }
+}
+
+.pulse-effect {
+  animation: pulse-border 3s infinite;
+}
+
+/* تحسين مظهر روابط السلايد بار */
+.sidebar-link {
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.sidebar-link::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: width 0.3s ease;
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.sidebar-link:hover::before {
+  width: 100%;
+}
+
+/* تأثير وهج للأيقونة النشطة */
+@keyframes glow {
+  0% {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
+  }
+  100% {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.7));
+  }
+}
+
+.active-icon {
+  animation: glow 2s infinite;
+}
+
+/* تحسين مظهر القائمة المطوية */
+.collapsed-menu-hover {
+  position: relative;
+}
+
+.collapsed-menu-hover::after {
+  content: attr(data-title);
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(67, 56, 202, 0.95);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  margin-right: 10px;
+  z-index: 50;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.collapsed-menu-hover:hover::after {
+  opacity: 1;
+  margin-right: 5px;
+}
+
+/* تنسيقات خاصة بالوضع الليلي */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dark .bg-white {
+  background-color: var(--card-bg);
+}
+
+.dark .text-gray-800 {
+  color: var(--foreground);
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #94a3b8;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--card-border);
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #334155;
+}
+
+.dark table {
+  border-color: var(--card-border);
+}
+
+.dark table th {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+.dark table tr:nth-child(even) {
+  background-color: #1e293b;
+}
+
+.dark table tr:hover {
+  background-color: #334155;
+}
+
+/* انتقال سلس عند تغيير الثيم */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+input,
+select,
+textarea,
+button,
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.border-gray-200,
+.border-gray-300 {
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* تعريف تحريك الوميض للمؤشر */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
